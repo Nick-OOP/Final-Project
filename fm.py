@@ -96,8 +96,11 @@ class TravelScheduling:
 
 while 1:
     print("----------- FLIGHT --- MANAGEMENT --- SYSTEM ------------")
-    print("1. Choose seat") #how many seats? Are there any seats remaining how much.
+    print("1. Boook seat") #how many seats? Are there any seats remaining how much.
     print("2. Change seat ") #urgent $pay. or stay in normal
-    print("3. Choose class ")
-    print("4. Change class ")
-    print("5. ")
+    print("3. Check seat number.")
+    print("4. Select class ")
+    print("5. Change class ")
+    print("6. Check class ")
+    print("7. Track luggage")
+    print("8. ")

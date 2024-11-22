@@ -1,0 +1,3 @@
+Booking code.
+
+I have made a simple GUI so far with tkinter. I had a bit more progress but had to redo everything upon learning how to use tkinter. I also implemented a database (sqlite3) which makes a file locally on the computer and then it can access that file in the future. For right now, that file is named temp. So far, I have made it to where the user can add flights, view all available flights (including the flights previously made which are stored in the file), purchase a ticket, and see tickets purchased. In the future, this section will link to the main project and will allow the user to do all above functions and make all collected and stored data accessible to the program.

@@ -6,13 +6,18 @@ class ClassType:
         self.premium_economy_class = ""
         self.business_class = ""
         self.first_class = ""
+        
+    def choose_class(self):
+        self.economy_class = 
+        self.premium_economy_class = 
+        self.business_class = 
+        self.first_class =
 
-    def choose_seat(self, class_name):
-        print("Choose your seat preference for:")
+    def choose_seat(self):
         print("1. Window")
         print("2. Middle")
         print("3. End")
-        seat_preference = int(input())
+        seat_preference = int(input("Enter your seat choice: "))
         return seat_preference
 
 class Pricing:
@@ -38,7 +43,7 @@ class Pricing:
 
 
 class Discount:
-    def __init__(self, base_price):
+    def __init__(self, base_price): # Work in progress
         self.base_price = base_price
 
     def holiday(self):
@@ -53,7 +58,7 @@ class Discount:
 
     def elderly(self, age):
         if age >= 70:
-            return self.base_price * 0.95  # 5% discount
+            return self.base_price * 0.95  # 5% discount for old people
         return self.base_price
 
 
@@ -73,13 +78,13 @@ while 1:
         user = int(input("Input your choice: "))
 
         if user == 1:
-            ClassType.economyC()
+            ClassType.economy_class()
         elif user == 2:
-            ClassType.premium_economyC()
+            ClassType.premium_economy_class()
         elif user == 3:
-            ClassType.businessC()
+            ClassType.business_class()
         elif user == 4:
-            ClassType.firstC()
+            ClassType.first_class()
 
     elif option == 2:
         ClassType.choose_seat()

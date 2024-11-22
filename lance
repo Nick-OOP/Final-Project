@@ -1,20 +1,5 @@
 from datetime import datetime
 
-
-class ClassType:
-    def __init__(self):
-        self.economy_class = ""
-        self.premium_economy_class = ""
-        self.business_class = ""
-        self.first_class = ""
-
-    def choose_seat(self, class_name):
-        print("Choose your seat preference for:")
-        print("1. Window")
-        print("2. Middle")
-        print("3. End")
-        seat_preference = int(input())from datetime import datetime
-
 class ClassType:
     def __init__(self):
         self.economy_class = ""
@@ -81,22 +66,16 @@ while 1:
         print("3. Business Class.")
         print("4. First Class.")
 
-    user = int(input("Input your choice: "))
+        user = int(input("Input your choice: "))
 
-    if user == 1:
-        class_management.economyC()
+        if user == 1:
+            ClassType.economyC()
+        elif user == 2:
+            ClassType.premium_economyC()
+        elif user == 3:
+            ClassType.businessC()
+        elif user == 4:
+            ClassType.firstC()
 
-    elif user == 2:
-        class_management.premium_economyC()
-
-    elif user == 3:
-        class_management.businessC()
-
-    elif user == 4:
-        class_management.firstC()
-
-    elif user == 5:
-        class_management.discounts()
-
-    if option == 2:
-        print("1. ")
+    elif option == 2:
+        ClassType.choose_seat()

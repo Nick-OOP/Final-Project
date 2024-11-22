@@ -13,25 +13,40 @@ class ClassType:
         print("1. Window")
         print("2. Middle")
         print("3. End")
+        seat_preference = int(input())from datetime import datetime
+
+class ClassType:
+    def __init__(self):
+        self.economy_class = ""
+        self.premium_economy_class = ""
+        self.business_class = ""
+        self.first_class = ""
+
+    def choose_seat(self, class_name):
+        print("Choose your seat preference for:")
+        print("1. Window")
+        print("2. Middle")
+        print("3. End")
         seat_preference = int(input())
         return seat_preference
 
-
 class Pricing:
-    def __init__(self):
+    def __init__(self): # I want to try making a base price and multiplying that price to make the other class prices
         self.first_class = 1000
         self.business = 500
         self.premium_economy = 300
         self.economy = 100
 
-    def original_price(self, class_name):
-        if class_name == "economy":
+
+    def original_price(self):
+
+        if ClassType == "economy":
             return self.economy
-        elif class_name == "premium_economy":
+        elif ClassType == "premium_economy":
             return self.premium_economy
-        elif class_name == "business":
+        elif ClassType == "business":
             return self.business
-        elif class_name == "first_class":
+        elif ClassType == "first_class":
             return self.first_class
         else:
             return None
@@ -53,10 +68,10 @@ class Discount:
         return self.base_price
 
 
-while True:
-    print('---------------M---E---N---U-----------------')
-    print('1. Choose class.')
-    print('2. Reservation of seats.')
+while 1:
+    print("---------------Menu-----------------")
+    print("1. Choose class.")
+    print("2. Reservation of seats.")
 
     option = int(input())
 
@@ -66,18 +81,22 @@ while True:
         print("3. Business Class.")
         print("4. First Class.")
 
-        user = int(input())
+    user = int(input("Input your choice: "))
 
-        class_management = ClassType()  # Assuming class_management is an instance of ClassType
+    if user == 1:
+        class_management.economyC()
 
-        if user == 1:
-            class_management.economy_class = "Economy"
-        elif user == 2:
-            class_management.premium_economy_class = "Premium Economy"
-        elif user == 3:
-            class_management.business_class = "Business"
-        elif user == 4:
-            class_management.first_class = "First Class"
+    elif user == 2:
+        class_management.premium_economyC()
+
+    elif user == 3:
+        class_management.businessC()
+
+    elif user == 4:
+        class_management.firstC()
+
+    elif user == 5:
+        class_management.discounts()
 
     if option == 2:
-        print("1. Choose seat.")
+        print("1. ")

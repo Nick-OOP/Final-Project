@@ -1,106 +1,195 @@
-class SeatingManagement:
-    def __init__(self, capacity):
-        self.bookings = []  
-        self.capacity = capacity 
-        self.preferences = {}  
+import tkinter as tk
+from tkinter import messagebox
+import sqlite3 as sql
 
-    def allocate_seat(self, booking):
-        if len(self.bookings) < self.capacity:
-            self.bookings.append(booking)
-            print(f"Seat allocated to {booking.passenger_id}.")
-            return True
-        else:
-            print("No available seats. Overbooking management required.")
-            return False
+# Database connection
+conn = sql.connect('flight_data.db')
+cursor = conn.cursor()
 
-    def manage_overbookings(self):
-        if len(self.bookings) > self.capacity:
-            removed_booking = self.bookings.pop()
-            print(f"Booking for {removed_booking.passenger_id} removed due to overbooking.")
-            return removed_booking
-        else:
-            print("No overbookings to manage.")
-            return None
+# Create necessary tables if they don't exist
+cursor.execute('''
+    CREATE TABLE IF NOT EXISTS flights (
+        flight_id INTEGER PRIMARY KEY,
+        flight_name TEXT,
+        available_seats INTEGER,
+        status TEXT
+    )
+''')
+cursor.execute('''
+    CREATE TABLE IF NOT EXISTS passengers (
+        passenger_id INTEGER PRIMARY KEY,
+        name TEXT,
+        seat_number INTEGER,
+        class_type TEXT,
+        luggage_id INTEGER
+    )
+''')
+cursor.execute('''
+    CREATE TABLE IF NOT EXISTS luggage (
+        luggage_id INTEGER PRIMARY KEY,
+        owner_id INTEGER,
+        weight REAL
+    )
+''')
+conn.commit()
 
-    def update_preferences(self, booking):
-        self.preferences[booking.passenger_id] = booking.preferences
-        print(f"Preferences updated for {booking.passenger_id}.")
+# Tkinter window setup
+window = tk.Tk()
+window.geometry("1600x900")
+window.configure(bg="White")
+window.title("Flight Booking System")
 
+label = tk.Label(window, text="Flight Management System", font=("Helvetica", 16), fg="Grey", bg="White")
+label.pack(pady=25)
 
-class ClassManagement:
+class FlightManagement:
     def __init__(self):
-        self.service_classes = {} 
+        self.seating_capacity = 100  # For simplicity, 100 seats per flight
+        self.passenger_count = 0
 
-    def add_service_class(self, class_info):
-        self.service_classes[class_info['type']] = class_info
-        print(f"Service class {class_info['type']} added.")
+    def book_seat(self, passenger_name):
+        if self.passenger_count < self.seating_capacity:
+            self.passenger_count += 1
+            seat_number = self.passenger_count
+            # Insert into the database
+            cursor.execute("INSERT INTO passengers (name, seat_number, class_type) VALUES (?, ?, ?)",
+                           (passenger_name, seat_number, 'Economy'))  # Default class
+            conn.commit()
+            messagebox.showinfo("Success", f"Seat booked successfully! Seat number: {seat_number}")
+        else:
+            messagebox.showwarning("Warning", "No available seats.")
 
-    def get_pricing(self, class_type):
-        price = self.service_classes.get(class_type, {}).get('price')
-        print(f"Price for {class_type}: {price}.")
-        return price
+    def change_seat(self, old_seat_number, new_seat_number):
+        cursor.execute("SELECT * FROM passengers WHERE seat_number = ?", (old_seat_number,))
+        passenger = cursor.fetchone()
+        if passenger:
+            cursor.execute("UPDATE passengers SET seat_number = ? WHERE seat_number = ?",
+                           (new_seat_number, old_seat_number))
+            conn.commit()
+            messagebox.showinfo("Success", f"Seat changed to: {new_seat_number}")
+        else:
+            messagebox.showwarning("Warning", "Old seat number not found.")
 
-    def list_offerings(self, class_type):
-        offerings = self.service_classes.get(class_type, {}).get('offerings', [])
-        print(f"Offerings for {class_type}: {offerings}.")
-        return offerings
+    def check_seat(self, passenger_name):
+        cursor.execute("SELECT seat_number FROM passengers WHERE name = ?", (passenger_name,))
+        seat = cursor.fetchone()
+        if seat:
+            messagebox.showinfo("Seat Number", f"Your seat number is: {seat[0]}")
+        else:
+            messagebox.showwarning("Warning", "Passenger not found.")
 
+    def select_class(self, seat_number, class_type):
+        cursor.execute("UPDATE passengers SET class_type = ? WHERE seat_number = ?",
+                       (class_type, seat_number))
+        conn.commit()
+        messagebox.showinfo("Class Selection", f"Class for seat number {seat_number} set to {class_type}.")
 
-class LuggageHandling:
-    def __init__(self):
-        self.luggage_list = {} 
-
-    def check_in_luggage(self, luggage_item):
-        self.luggage_list[luggage_item.id] = luggage_item
-        print(f"Luggage {luggage_item.id} checked in.")
+    def change_class(self, seat_number, new_class_type):
+        cursor.execute("UPDATE passengers SET class_type = ? WHERE seat_number = ?",
+                       (new_class_type, seat_number))
+        conn.commit()
+        messagebox.showinfo("Class Change", f"Class for seat number {seat_number} changed to {new_class_type}.")
 
     def track_luggage(self, luggage_id):
-        luggage = self.luggage_list.get(luggage_id)
+        cursor.execute("SELECT * FROM luggage WHERE luggage_id = ?", (luggage_id,))
+        luggage = cursor.fetchone()
         if luggage:
-            print(f"Luggage {luggage_id} found: {luggage}.")
+            messagebox.showinfo("Luggage Tracking", f"Luggage found: Weight - {luggage[2]} kg")
         else:
-            print(f"Luggage {luggage_id} not found.")
-        return luggage
+            messagebox.showwarning("Luggage not found", "No luggage found with this ID.")
 
-    def deliver_luggage(self, luggage_item):
-        if luggage_item.id in self.luggage_list:
-            del self.luggage_list[luggage_item.id]
-            print(f"Luggage {luggage_item.id} delivered.")
-        else:
-            print(f"Luggage {luggage_item.id} not found in the system.")
+    def cancel_flight(self, flight_id):
+        cursor.execute("UPDATE flights SET status = ? WHERE flight_id = ?", ('Cancelled', flight_id))
+        conn.commit()
+        messagebox.showinfo("Flight Cancellation", f"Flight {flight_id} cancelled successfully.")
 
+    def view_flights(self):
+        cursor.execute("SELECT * FROM flights")
+        flights = cursor.fetchall()
+        flights_info = "\n".join([f"Flight {flight[1]} (ID: {flight[0]}) - Status: {flight[3]}, Available Seats: {flight[2]}" for flight in flights])
+        messagebox.showinfo("Flight Schedule", flights_info if flights else "No flights available.")
 
-class TravelScheduling:
-    def __init__(self):
-        self.flights = {} 
+# Instance of the Flight Management system
+flight_system = FlightManagement()
 
-    def update_flight_status(self, flight_id, status):
-        if flight_id in self.flights:
-            self.flights[flight_id]['status'] = status
-            print(f"Flight {flight_id} status updated to {status}.")
-        else:
-            print(f"Flight {flight_id} not found.")
+# Button actions for the GUI
+def view_seats():
+    flight_system.view_flights()
 
-    def get_flight_schedule(self):
-        print("Current flight schedule:")
-        for flight_id, details in self.flights.items():
-            print(f"{flight_id}: {details}")
-        return self.flights
+def book_seat_gui():
+    def book():
+        name = entry_name.get()
+        if name:
+            flight_system.book_seat(name)
+            booking_window.destroy()
 
-    def notify_passengers(self, flight_id):
-        if flight_id in self.flights:
-            print(f"Notification sent to passengers of flight {flight_id}.")
-        else:
-            print(f"Flight {flight_id} not found.")
+    booking_window = tk.Toplevel(window)
+    booking_window.geometry("300x200")
+    booking_window.title("Book a Seat")
 
+    label_name = tk.Label(booking_window, text="Enter your name:")
+    label_name.pack(pady=10)
+    entry_name = tk.Entry(booking_window)
+    entry_name.pack(pady=10)
 
-while 1:
-    print("----------- FLIGHT --- MANAGEMENT --- SYSTEM ------------")
-    print("1. Boook seat") #how many seats? Are there any seats remaining how much.
-    print("2. Change seat ") #urgent $pay. or stay in normal
-    print("3. Check seat number.")
-    print("4. Select class ")
-    print("5. Change class ")
-    print("6. Check class ")
-    print("7. Track luggage")
-    print("8. ")
+    button_book = tk.Button(booking_window, text="Book Seat", command=book)
+    button_book.pack(pady=10)
+
+def change_seat_gui():
+    def change():
+        old_seat = int(entry_old_seat.get())
+        new_seat = int(entry_new_seat.get())
+        flight_system.change_seat(old_seat, new_seat)
+        change_window.destroy()
+
+    change_window = tk.Toplevel(window)
+    change_window.geometry("300x200")
+    change_window.title("Change Seat")
+
+    label_old_seat = tk.Label(change_window, text="Enter old seat number:")
+    label_old_seat.pack(pady=10)
+    entry_old_seat = tk.Entry(change_window)
+    entry_old_seat.pack(pady=10)
+
+    label_new_seat = tk.Label(change_window, text="Enter new seat number:")
+    label_new_seat.pack(pady=10)
+    entry_new_seat = tk.Entry(change_window)
+    entry_new_seat.pack(pady=10)
+
+    button_change = tk.Button(change_window, text="Change Seat", command=change)
+    button_change.pack(pady=10)
+
+def track_luggage_gui():
+    def track():
+        luggage_id = int(entry_luggage_id.get())
+        flight_system.track_luggage(luggage_id)
+        luggage_window.destroy()
+
+    luggage_window = tk.Toplevel(window)
+    luggage_window.geometry("300x200")
+    luggage_window.title("Track Luggage")
+
+    label_luggage_id = tk.Label(luggage_window, text="Enter luggage ID:")
+    label_luggage_id.pack(pady=10)
+    entry_luggage_id = tk.Entry(luggage_window)
+    entry_luggage_id.pack(pady=10)
+
+    button_track = tk.Button(luggage_window, text="Track Luggage", command=track)
+    button_track.pack(pady=10)
+
+# Creating the GUI buttons
+button_view_seats = tk.Button(window, text="View Flight Schedules", font=("Helvetica", 12), command=view_seats)
+button_view_seats.pack(pady=10)
+
+button_book_seat = tk.Button(window, text="Book Seat", font=("Helvetica", 12), command=book_seat_gui)
+button_book_seat.pack(pady=10)
+
+button_change_seat = tk.Button(window, text="Change Seat", font=("Helvetica", 12), command=change_seat_gui)
+button_change_seat.pack(pady=10)
+
+button_track_luggage = tk.Button(window, text="Track Luggage", font=("Helvetica", 12), command=track_luggage_gui)
+button_track_luggage.pack(pady=10)
+
+# Start the Tkinter event loop
+window.mainloop()
+

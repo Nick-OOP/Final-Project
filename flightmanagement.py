@@ -51,8 +51,9 @@ class FlightManagement:
         if self.passenger_count < self.seating_capacity:
             self.passenger_count += 1
             seat_number = self.passenger_count
+            # Insert into the database
             cursor.execute("INSERT INTO passengers (name, seat_number, class_type) VALUES (?, ?, ?)",
-                           (passenger_name, seat_number, 'Economy'))
+                           (passenger_name, seat_number, 'Economy'))  # Default class
             conn.commit()
             messagebox.showinfo("Success", f"Seat booked successfully! Seat number: {seat_number}")
         else:
@@ -68,6 +69,26 @@ class FlightManagement:
             messagebox.showinfo("Success", f"Seat changed to: {new_seat_number}")
         else:
             messagebox.showwarning("Warning", "Old seat number not found.")
+
+    def check_seat(self, passenger_name):
+        cursor.execute("SELECT seat_number FROM passengers WHERE name = ?", (passenger_name,))
+        seat = cursor.fetchone()
+        if seat:
+            messagebox.showinfo("Seat Number", f"Your seat number is: {seat[0]}")
+        else:
+            messagebox.showwarning("Warning", "Passenger not found.")
+
+    def select_class(self, seat_number, class_type):
+        cursor.execute("UPDATE passengers SET class_type = ? WHERE seat_number = ?",
+                       (class_type, seat_number))
+        conn.commit()
+        messagebox.showinfo("Class Selection", f"Class for seat number {seat_number} set to {class_type}.")
+
+    def change_class(self, seat_number, new_class_type):
+        cursor.execute("UPDATE passengers SET class_type = ? WHERE seat_number = ?",
+                       (new_class_type, seat_number))
+        conn.commit()
+        messagebox.showinfo("Class Change", f"Class for seat number {seat_number} changed to {new_class_type}.")
 
     def track_luggage(self, luggage_id):
         cursor.execute("SELECT * FROM luggage WHERE luggage_id = ?", (luggage_id,))
@@ -88,7 +109,10 @@ class FlightManagement:
         flights_info = "\n".join([f"Flight {flight[1]} (ID: {flight[0]}) - Status: {flight[3]}, Available Seats: {flight[2]}" for flight in flights])
         messagebox.showinfo("Flight Schedule", flights_info if flights else "No flights available.")
 
-# GUI Functions
+# Instance of the Flight Management system
+flight_system = FlightManagement()
+
+# Button actions for the GUI
 def view_seats():
     flight_system.view_flights()
 
@@ -135,36 +159,25 @@ def change_seat_gui():
     button_change = tk.Button(change_window, text="Change Seat", command=change)
     button_change.pack(pady=10)
 
-def add_flight_gui():
-    def add():
-        flight_name = entry_name.get()
-        available_seats = int(entry_seats.get())
-        cursor.execute("INSERT INTO flights (flight_name, available_seats, status) VALUES (?, ?, ?)",
-                       (flight_name, available_seats, 'Scheduled'))
-        conn.commit()
-        messagebox.showinfo("Success", "Flight added successfully!")
-        add_flight_window.destroy()
+def track_luggage_gui():
+    def track():
+        luggage_id = int(entry_luggage_id.get())
+        flight_system.track_luggage(luggage_id)
+        luggage_window.destroy()
 
-    add_flight_window = tk.Toplevel(window)
-    add_flight_window.geometry("300x200")
-    add_flight_window.title("Add Flight")
+    luggage_window = tk.Toplevel(window)
+    luggage_window.geometry("300x200")
+    luggage_window.title("Track Luggage")
 
-    label_name = tk.Label(add_flight_window, text="Flight Name:")
-    label_name.pack(pady=5)
-    entry_name = tk.Entry(add_flight_window)
-    entry_name.pack(pady=5)
+    label_luggage_id = tk.Label(luggage_window, text="Enter luggage ID:")
+    label_luggage_id.pack(pady=10)
+    entry_luggage_id = tk.Entry(luggage_window)
+    entry_luggage_id.pack(pady=10)
 
-    label_seats = tk.Label(add_flight_window, text="Available Seats:")
-    label_seats.pack(pady=5)
-    entry_seats = tk.Entry(add_flight_window)
-    entry_seats.pack(pady=5)
+    button_track = tk.Button(luggage_window, text="Track Luggage", command=track)
+    button_track.pack(pady=10)
 
-    button_add = tk.Button(add_flight_window, text="Add Flight", command=add)
-    button_add.pack(pady=10)
-
-# Create Buttons
-flight_system = FlightManagement()
-
+# Creating the GUI buttons
 button_view_seats = tk.Button(window, text="View Flight Schedules", font=("Helvetica", 12), command=view_seats)
 button_view_seats.pack(pady=10)
 
@@ -174,8 +187,8 @@ button_book_seat.pack(pady=10)
 button_change_seat = tk.Button(window, text="Change Seat", font=("Helvetica", 12), command=change_seat_gui)
 button_change_seat.pack(pady=10)
 
-button_add_flight = tk.Button(window, text="Add Flight", font=("Helvetica", 12), command=add_flight_gui)
-button_add_flight.pack(pady=10)
+button_track_luggage = tk.Button(window, text="Track Luggage", font=("Helvetica", 12), command=track_luggage_gui)
+button_track_luggage.pack(pady=10)
 
 # Start the Tkinter event loop
 window.mainloop()

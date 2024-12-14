@@ -1,6 +1,7 @@
 import tkinter as tk
 import sqlite3 as sql
 from tkinter import messagebox
+from datetime import datetime
 
 conn = sql.connect('temp.db')
 cursor = conn.cursor()
@@ -20,12 +21,52 @@ CREATE TABLE IF NOT EXISTS tickets (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     flight_id INTEGER NOT NULL,
     passenger_name TEXT NOT NULL,
+    seat_class TEXT NOT NULL,
+    seat_preference TEXT NOT NULL,
+    price REAL NOT NULL,
     FOREIGN KEY (flight_id) REFERENCES flights (id)
 )
 """)
 
 conn.commit()
 
+class ClassType:
+    def __init__(self):
+        self.classes = {
+            "Economy": 100,
+            "Premium Economy": 300,
+            "Business": 500,
+            "First Class": 1000
+        }
+
+    def get_class_price(self, seat_class):
+        return self.classes.get(seat_class, 0)
+
+class Discount:
+    def __init__(self, base_price):
+        self.base_price = base_price
+
+    def apply_discounts(self, age):
+        price = self.holiday_discount()
+        price = self.elderly_discount(age, price)
+        return price
+
+    def holiday_discount(self):
+        current_date = datetime.now()
+        if current_date.month == 12 and current_date.day == 25:
+            return self.base_price * 0.85
+        elif current_date.month == 11 and current_date.day == 28:
+            return self.base_price * 0.90
+        elif current_date.month == 10 and current_date.day == 31:
+            return self.base_price * 0.90
+        return self.base_price
+
+    def elderly_discount(self, age, price):
+        if age >= 70:
+            return price * 0.95
+        return price
+
+# Tkinter UI
 window = tk.Tk()
 window.geometry("800x600")
 window.configure(bg="#f0f0f0")
@@ -33,6 +74,8 @@ window.title("Flight Booking System")
 
 label = tk.Label(window, text="Flight Booking System", font=("Helvetica", 20, "bold"), fg="#333", bg="#f0f0f0")
 label.pack(pady=20)
+
+class_type = ClassType()
 
 def enter_flights():
     def save_flight():
@@ -147,27 +190,33 @@ def purchase_ticket():
     def book_ticket():
         flight_id = flight_id_entry.get()
         passenger_name = passenger_name_entry.get()
+        seat_class = class_var.get()
+        seat_preference = seat_pref_var.get()
+        age = int(age_entry.get()) if age_entry.get().isdigit() else 0
 
         cursor.execute("SELECT seats_available FROM flights WHERE id = ?", (flight_id,))
         flight = cursor.fetchone()
 
-        if flight and passenger_name:
+        if flight and passenger_name and seat_class and seat_preference:
             if flight[0] > 0:
-                cursor.execute("INSERT INTO tickets (flight_id, passenger_name) VALUES (?, ?)",
-                               (flight_id, passenger_name))
+                base_price = class_type.get_class_price(seat_class)
+                final_price = Discount(base_price).apply_discounts(age)
+
+                cursor.execute("INSERT INTO tickets (flight_id, passenger_name, seat_class, seat_preference, price) VALUES (?, ?, ?, ?, ?)",
+                               (flight_id, passenger_name, seat_class, seat_preference, final_price))
                 cursor.execute("UPDATE flights SET seats_available = seats_available - 1 WHERE id = ?",
                                (flight_id,))
                 conn.commit()
-                messagebox.showinfo("Success", "Ticket booked!")
+                messagebox.showinfo("Success", f"Ticket booked! Final price: ${final_price:.2f}")
                 purchase_window.destroy()
             else:
                 messagebox.showerror("Error", "No seats available.")
         else:
-            messagebox.showerror("Error", "Invalid flight ID or missing name.")
+            messagebox.showerror("Error", "Invalid flight ID or missing details.")
 
     purchase_window = tk.Toplevel(window)
     purchase_window.title("Purchase Ticket")
-    purchase_window.geometry("400x300")
+    purchase_window.geometry("400x400")
     purchase_window.configure(bg="#f0f0f0")
 
     tk.Label(purchase_window, text="Flight ID:").pack(pady=5)
@@ -177,6 +226,20 @@ def purchase_ticket():
     tk.Label(purchase_window, text="Passenger Name:").pack(pady=5)
     passenger_name_entry = tk.Entry(purchase_window)
     passenger_name_entry.pack(pady=5)
+
+    tk.Label(purchase_window, text="Seat Class:").pack(pady=5)
+    class_var = tk.StringVar(value="Economy")
+    class_dropdown = tk.OptionMenu(purchase_window, class_var, *class_type.classes.keys())
+    class_dropdown.pack(pady=5)
+
+    tk.Label(purchase_window, text="Seat Preference:").pack(pady=5)
+    seat_pref_var = tk.StringVar(value="Window")
+    seat_pref_dropdown = tk.OptionMenu(purchase_window, seat_pref_var, "Window", "Middle", "Aisle")
+    seat_pref_dropdown.pack(pady=5)
+
+    tk.Label(purchase_window, text="Age:").pack(pady=5)
+    age_entry = tk.Entry(purchase_window)
+    age_entry.pack(pady=5)
 
     tk.Button(purchase_window, text="Book Ticket", command=book_ticket).pack(pady=10)
 

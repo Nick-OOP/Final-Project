@@ -187,6 +187,8 @@ def view_tickets():
         tk.Label(tickets_window, text="No tickets purchased.", font=("Helvetica", 12), bg="#f0f0f0").pack(pady=10)
 
 def purchase_ticket():
+
+    current_price = tk.DoubleVar(value=0.0)
     def book_ticket():
         flight_id = flight_id_entry.get()
         passenger_name = passenger_name_entry.get()
@@ -202,8 +204,12 @@ def purchase_ticket():
                 base_price = class_type.get_class_price(seat_class)
                 final_price = Discount(base_price).apply_discounts(age)
 
-                cursor.execute("INSERT INTO tickets (flight_id, passenger_name, seat_class, seat_preference, price) VALUES (?, ?, ?, ?, ?)",
-                               (flight_id, passenger_name, seat_class, seat_preference, final_price))
+                # Update the current price display
+                current_price.set(final_price)
+
+                cursor.execute(
+                    "INSERT INTO tickets (flight_id, passenger_name, seat_class, seat_preference, price) VALUES (?, ?, ?, ?, ?)",
+                    (flight_id, passenger_name, seat_class, seat_preference, final_price))
                 cursor.execute("UPDATE flights SET seats_available = seats_available - 1 WHERE id = ?",
                                (flight_id,))
                 conn.commit()
@@ -216,7 +222,7 @@ def purchase_ticket():
 
     purchase_window = tk.Toplevel(window)
     purchase_window.title("Purchase Ticket")
-    purchase_window.geometry("400x400")
+    purchase_window.geometry("400x500")
     purchase_window.configure(bg="#f0f0f0")
 
     tk.Label(purchase_window, text="Flight ID:").pack(pady=5)
@@ -242,6 +248,23 @@ def purchase_ticket():
     age_entry.pack(pady=5)
 
     tk.Button(purchase_window, text="Book Ticket", command=book_ticket).pack(pady=10)
+
+    # Updating text price start here
+    price_var = tk.StringVar()
+    price_var.set(f"Total Ticket Price: ${current_price.get():.2f}")
+
+    label = tk.Label(purchase_window, textvariable=price_var, font=("Arial", 16))
+    label.pack(pady=20)
+
+    # Function to update the price
+    def update_price():
+        selected_class = class_var.get()
+        base_price = class_type.get_class_price(selected_class)
+        current_price.set(base_price)
+        price_var.set(f"Total Ticket Price: ${base_price:.2f}")
+
+    update_button = tk.Button(purchase_window, text="Change seating", command=update_price)
+    update_button.pack(pady=10)
 
 B1 = tk.Button(window, text="Enter Flights", command=enter_flights)
 B1.place(x=100, y=100)

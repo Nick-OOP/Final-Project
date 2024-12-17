@@ -1,0 +1,81 @@
+class Luggage:
+    def __init__(self):
+        self.class_configs = {
+            'e': {
+                'free_carry_on_limit': 10,
+                'free_luggage_count': 1,
+                'free_luggage_weight': 23,
+                'overweight_fee': 50,
+                'extra_luggage_fee': 100
+            },
+            'p_e': {
+                'free_carry_on_limit': 10,
+                'free_luggage_count': 2,
+                'free_luggage_weight': 23,
+                'overweight_fee': 55,
+                'extra_luggage_fee': 100
+            },
+            'b': {
+                'free_carry_on_limit': 10,
+                'free_luggage_count': 3,
+                'free_luggage_weight': 32,
+                'overweight_fee': 55,
+                'extra_luggage_fee': 250
+            },
+            'fc': {
+                'free_carry_on_limit': 10,
+                'free_luggage_count': 3,
+                'free_luggage_weight': 32,
+                'overweight_fee': 75,
+                'extra_luggage_fee': 250
+            }
+        }
+
+    def add_luggage(self):
+        while True:
+            print("-" * 36)
+            travel_class = input("Enter your class preference (e/p_e/b/fc): ").lower()
+
+            if travel_class not in self.class_configs:
+                print("Invalid option. Please choose e, p_e, b, or fc.")
+                continue
+
+            config = self.class_configs[travel_class]
+            print("*" * 36)
+            print(f"1 carry-on free = {config['free_carry_on_limit']}Kg limit")
+            print(f"{config['free_luggage_count']} luggage(s) free = {config['free_luggage_weight']}Kg limit")
+            print("*" * 15 + " Fine " + "*" * 15)
+            print(f"${config['overweight_fee']} for overweight luggage")
+            print(f"${config['extra_luggage_fee']} for extra luggage")
+            print("*" * 36)
+
+            check_in = int(input("Enter the number of luggages: "))
+            luggage_cost = 0
+
+            if check_in > config['free_luggage_count']:
+                luggage_cost += (check_in - config['free_luggage_count']) * config['extra_luggage_fee']  # Extra luggage fee
+
+            for i in range(check_in):
+                weight = float(input(f"Enter the weight of bag {i + 1} (kg): "))
+                if weight <= config['free_carry_on_limit']:
+                    print(f"Carry-On (S): {weight} kg")
+                elif weight <= config['free_luggage_weight']:
+                    print(f"Luggage (M): {weight} kg")
+                else:
+                    overweight_fee = (weight - config['free_luggage_weight']) * config['overweight_fee']
+                    luggage_cost += overweight_fee
+                    print(f"Overweight luggage (L): {weight} kg, Overweight Fee: ${overweight_fee:.2f}")
+
+            print(f"Total extra luggage cost: ${luggage_cost:.2f}")
+
+            u_continue = input("Do you want to add more luggage details? (Y/N): ").lower()
+            if u_continue != 'y':
+                print('Your bags will be safe with us!')
+                break
+
+    def check_luggage(self):
+        print("Luggage details checking is not implemented yet.")
+
+luggage_instance = Luggage()
+luggage_instance.add_luggage()
+luggage_instance.check_luggage()
